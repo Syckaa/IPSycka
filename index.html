@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPSycka - Outil de Recherche IP Prestige</title>
+    
+    <link rel="preconnect" href="http://ip-api.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <style>
+        :root {
+            --bg-color: #0d0d0f;
+            --surface-color: #1a1a1e;
+            --primary-text-color: #f0f0f0;
+            --secondary-text-color: #8a8a93;
+            --highlight-color: #ffffff;
+            --border-color: #2c2c34;
+            --accent-color: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.15);
+            --error-color: #ef4444;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at center, rgba(255, 255, 255, 0.03) 0%, transparent 60%);
+            color: var(--primary-text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 2rem 1rem;
+            line-height: 1.5;
+        }
+
+        .main-container {
+            background-color: var(--surface-color);
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 0 0 1px var(--border-color), 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px var(--accent-glow);
+            width: 100%;
+            max-width: 720px;
+            text-align: center;
+            border: 1px solid transparent;
+        }
+
+        header { margin-bottom: 2.5rem; }
+
+        .logo {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.8rem;
+            margin-bottom: 1rem;
+        }
+        .logo svg { width: 48px; height: 48px; }
+        .logo-title {
+            font-size: 2.75rem;
+            font-weight: 700;
+            color: var(--highlight-color);
+            letter-spacing: -1.5px;
+        }
+        .subtitle { color: var(--secondary-text-color); font-size: 1.1rem; }
+        
+        .search-container {
+            margin-bottom: 3rem;
+        }
+        .search-bar {
+            display: flex;
+            align-items: center;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 0.25rem 0.25rem 0.25rem 1rem;
+            transition: all 0.3s ease-in-out;
+        }
+        .search-bar:hover {
+             border-color: #4a4a52;
+        }
+        .search-bar:focus-within {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 4px var(--accent-glow);
+        }
+        .search-bar i {
+            color: var(--secondary-text-color);
+            transition: color 0.3s ease-in-out;
+        }
+        .search-bar:focus-within i {
+            color: var(--accent-color);
+        }
+
+        .ip-input {
+            flex-grow: 1;
+            padding: 0.75rem;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--primary-text-color);
+            font-size: 1rem;
+            margin-left: 0.75rem;
+        }
+        .ip-input::placeholder { color: var(--secondary-text-color); }
+        
+        .lookup-button {
+            padding: 0.75rem 1.75rem;
+            background-image: linear-gradient(to right, #3b82f6, #60a5fa);
+            color: var(--highlight-color);
+            border: none;
+            border-radius: 9px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            white-space: nowrap;
+        }
+        .lookup-button:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+        }
+        .lookup-button:active:not(:disabled) {
+            transform: scale(1);
+        }
+        .lookup-button:disabled {
+            background: var(--border-color);
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+            color: var(--secondary-text-color);
+        }
+        
+        #loader {
+            display: none;
+            font-size: 2.5rem;
+            color: var(--accent-color);
+            margin: 2rem 0;
+        }
+        #loader .fa-spinner { animation: spin 1.5s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .results-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.25rem;
+            text-align: left;
+            opacity: 0;
+            transition: opacity 0.5s ease-out;
+        }
+        .results-container.visible { opacity: 1; }
+
+        .result-card {
+            background-color: var(--bg-color);
+            padding: 1.25rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInCard 0.5s forwards ease-out;
+        }
+        @keyframes fadeInCard {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-label {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.9rem;
+            color: var(--secondary-text-color);
+            margin-bottom: 0.5rem;
+        }
+        .result-label i { color: var(--accent-color); }
+        .result-value {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary-text-color);
+            word-break: break-all;
+        }
+        .result-value.small { font-size: 1.1rem; }
+
+        .status-message {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 8px;
+            font-weight: 400;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+        .status-message.error {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--error-color);
+            border: 1px solid var(--error-color);
+        }
+
+        footer {
+            margin-top: 3rem;
+            color: var(--secondary-text-color);
+            font-size: 0.9rem;
+        }
+        footer a {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        footer a:hover { text-decoration: underline; }
+
+        @media (max-width: 768px) {
+            body { padding: 1rem; align-items: flex-start; }
+            .main-container { padding: 1.5rem; }
+            .logo svg { width: 40px; height: 40px; }
+            .logo-title { font-size: 2.25rem; }
+        }
+    </style>
+</head>
+<body>
+    <main class="main-container">
+        <header>
+            <div class="logo">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z" stroke="var(--accent-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M11 12L13 10L11 8L13 12L11 14L13 16" stroke="var(--highlight-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <h1 class="logo-title">IPSycka</h1>
+            </div>
+            <p class="subtitle">La nouvelle référence pour l'analyse d'adresses IP.</p>
+        </header>
+        
+        <form id="lookup-form" class="search-container">
+            <div class="search-bar">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="ip-input" class="ip-input" placeholder="Entrez une IP ou laissez vide...">
+                <button type="submit" id="lookup-btn" class="lookup-button">Analyser</button>
+            </div>
+        </form>
+
+        <div id="loader"><i class="fa-solid fa-spinner"></i></div>
+        <div id="status-container"></div>
+        <div id="results-container" class="results-container"></div>
+
+        <footer>
+            <p>© 2025 IPSycka. Développé avec passion. Données par <a href="https://ip-api.com/" target="_blank" rel="noopener noreferrer">ip-api.com</a>.</p>
+        </footer>
+    </main>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('lookup-form');
+        const ipInput = document.getElementById('ip-input');
+        const lookupBtn = document.getElementById('lookup-btn');
+        const resultsContainer = document.getElementById('results-container');
+        const statusContainer = document.getElementById('status-container');
+        const loader = document.getElementById('loader');
+
+        const API_URL = 'http://ip-api.com/json/';
+
+        const showStatusMessage = (message) => {
+            statusContainer.innerHTML = `<div class="status-message error">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <span>${message}</span>
+            </div>`;
+        };
+        
+        const setUIState = (state) => {
+            if (state === 'loading') {
+                lookupBtn.disabled = true;
+                lookupBtn.textContent = 'Analyse...';
+                statusContainer.innerHTML = '';
+                resultsContainer.innerHTML = '';
+                resultsContainer.classList.remove('visible');
+                loader.style.display = 'block';
+            } else {
+                lookupBtn.disabled = false;
+                lookupBtn.textContent = 'Analyser';
+                loader.style.display = 'none';
+            }
+        };
+
+        const displayResults = (data) => {
+            const resultCardsData = [
+                { label: 'Adresse IP', value: data.query, icon: 'fa-network-wired' },
+                { label: 'Localisation', value: `${data.city || 'N/A'}, ${data.country || 'N/A'} (${data.countryCode || 'N/A'})`, icon: 'fa-map-location-dot', size: 'small' },
+                { label: 'Fournisseur (FAI)', value: data.isp, icon: 'fa-wifi' },
+                { label: 'Organisation', value: data.org, icon: 'fa-building', size: 'small' },
+                { label: 'Coordonnées', value: (data.lat && data.lon) ? `${data.lat.toFixed(4)}, ${data.lon.toFixed(4)}` : 'N/A', icon: 'fa-location-dot' },
+                { label: 'Code Postal', value: data.zip, icon: 'fa-envelopes-bulk' },
+            ];
+
+            resultsContainer.innerHTML = '';
+            resultCardsData.forEach((card, index) => {
+                if (!card.value || card.value.includes('N/A')) return;
+                const cardElement = document.createElement('div');
+                cardElement.className = 'result-card';
+                cardElement.style.animationDelay = `${index * 80}ms`;
+                const valueClass = card.size === 'small' ? 'result-value small' : 'result-value';
+                cardElement.innerHTML = `
+                    <div class="result-label">
+                        <i class="fa-solid ${card.icon}"></i>
+                        <span>${card.label}</span>
+                    </div>
+                    <div class="${valueClass}">${card.value}</div>
+                `;
+                resultsContainer.appendChild(cardElement);
+            });
+            resultsContainer.classList.add('visible');
+        };
+
+        const lookupIP = async (ip = '') => {
+            setUIState('loading');
+            try {
+                const fields = 'status,message,country,countryCode,city,zip,lat,lon,isp,org,query';
+                const response = await fetch(`${API_URL}${ip}?fields=${fields}`);
+                if (!response.ok) throw new Error(`Erreur réseau (${response.status})`);
+                const data = await response.json();
+                if (data.status === 'fail') throw new Error(data.message || 'Adresse IP invalide ou privée.');
+                displayResults(data);
+            } catch (error) {
+                showStatusMessage(`Erreur : ${error.message}`);
+            } finally {
+                setUIState('idle');
+            }
+        };
+
+        form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const ipToLookup = ipInput.value.trim();
+            lookupIP(ipToLookup);
+        });
+
+        lookupIP();
+    });
+    </script>
+</body>
+</html>
