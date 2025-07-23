@@ -45,7 +45,7 @@ Aucune installation n'est requise. Ce projet est un simple fichier autonome.
 
 Ce projet a été imaginé et développé avec passion par **Sycka**.
 
-*   **GitHub** : [**Sycka**](https://github.com/Sycka)
+*   **GitHub** : [**Sycka**](https://github.com/Syckaa)
 *   **Discord** : `syckaa`
 
 Les données relatives aux adresses IP sont fournies gracieusement par [ip-api.com](https://ip-api.com/).
